@@ -1,9 +1,9 @@
 $(() => {
-    new Main($('#mainCanvas').get(0), $('#imgFileInput').get(0), $('#maxTimesInput').get(0));
+    new Main($('#mainCanvas').get(0), $('#imgFileInput').get(0), $('#maxTimesInput').get(0), $('#saveButton').get(0));
 });
 
 class Main {
-    constructor(mainCanvas, inputImg, inputTimes) {
+    constructor(mainCanvas, inputImg, inputTimes, buttonSave) {
         this.mainCanvas = mainCanvas;
         this.mainCtx = this.mainCanvas.getContext('2d');
 
@@ -24,6 +24,19 @@ class Main {
 
         this.inputTimes.value = 3;
         this.inputTimes.min = 0;
+
+        this.buttonSave = buttonSave;
+
+        this.buttonSave.addEventListener('click', (e) => {
+            this.mainCanvas.toBlob((blob) =>{
+                let a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'image.png';
+                a.click();
+         
+                URL.revokeObjectURL(a.href);
+            });
+        });
 
         this.reimg = null;
         this.interval = null;
@@ -62,11 +75,6 @@ class Main {
                         clearInterval(this.interval);
                     }
                     i += 1;
-                }
-
-                if (i < this.inputTimes.value && this.inputTimes.max === undefined) {
-                    this.inputTimes.value = i + 1;
-                    this.inputTimes.max = i + 1;
                 }
             }, this.intervalTime);
         }
@@ -198,11 +206,15 @@ class RangePriority {
 
             for (let x = this.range.sx; x < this.range.ex; x++) {
                 for (let i = 0; i < 3; i++) {
-                    this.variance[i] += ((this.imgData.data[sfx + i] - this.average[i]) / 256) ** 2 / this.range.area;
+                    this.variance[i] += (((this.imgData.data[sfx + i] - this.average[i])) ** 2) >> 8;
                 }
 
                 sfx += 4;
             }
+        }
+        
+        for (let i = 0; i < 3; i++) {
+            this.variance[i] = this.variance[i] / this.range.area;
         }
     }
 
