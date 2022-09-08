@@ -144,7 +144,7 @@ class RecursiveImage {
 
                 this.draw(partRangePriority, line);
 
-                if (range.width > 1 && range.height > 1) {
+                if (range.width > 1 || range.height > 1) {
                     this.addRangePriority(partRangePriority, 0, this.rangePrioritys.length - 1);
                 }
             }
@@ -176,6 +176,8 @@ class RecursiveImage {
     }
 
     drawAll(line) {
+        this.ctx.putImageData(this.imgData, 0, 0);
+
         this.rangePrioritys.forEach((rangePriority) => {
             this.draw(rangePriority, line);
         });
