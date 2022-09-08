@@ -1,9 +1,16 @@
 $(() => {
-    new Main($('#mainCanvas').get(0), $('#imgFileInput').get(0), $('#maxTimesInput').get(0), $('#saveButton').get(0));
+    new Main(
+        $('#mainCanvas').get(0),
+        $('#imgFileInput').get(0),
+        $('#maxTimesInput').get(0),
+        $('#divideInput').get(0),
+        $('#saveButton').get(0),
+        $('#resetButton').get(0)
+    );
 });
 
 class Main {
-    constructor(mainCanvas, inputImg, inputTimes, buttonSave) {
+    constructor(mainCanvas, inputImg, inputTimes, inputDivide, buttonSave, buttonReset) {
         this.mainCanvas = mainCanvas;
         this.mainCtx = this.mainCanvas.getContext('2d');
 
@@ -25,18 +32,25 @@ class Main {
         this.inputTimes.value = 3;
         this.inputTimes.min = 0;
 
+        this.inputDivide = inputDivide;
+
+        this.inputDivide.value = 2;
+        this.inputDivide.min = 2;
+
         this.buttonSave = buttonSave;
 
         this.buttonSave.addEventListener('click', (e) => {
-            this.mainCanvas.toBlob((blob) =>{
+            this.mainCanvas.toBlob((blob) => {
                 let a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
                 a.download = 'image.png';
                 a.click();
-         
+
                 URL.revokeObjectURL(a.href);
             });
         });
+
+        this.buttonReset = buttonReset;
 
         this.reimg = null;
         this.interval = null;
@@ -71,12 +85,18 @@ class Main {
                 let i = 0;
 
                 while (i < this.inputTimes.value && (performance.now() - start) < (this.intervalTime / 2)) {
-                    if (!this.reimg.divide(2)) {
+                    if (!this.reimg.divide(this.inputDivide.value)) {
                         clearInterval(this.interval);
                     }
                     i += 1;
                 }
             }, this.intervalTime);
+
+            this.reimg.divide(this.inputDivide.value);
+
+            this.buttonReset.addEventListener('click', (e) => {
+                this.reimg.reset();
+            });
         }
     }
 }
@@ -88,8 +108,7 @@ class RecursiveImage {
         this.maxPriority = 0;
         this.maxSfx = 0;
 
-        let range = new Range2D(0, 0, this.imgData.width, this.imgData.height);
-        this.rangePrioritys = [new RangePriority(range, imgData, 1)];
+        this.reset();
     }
 
     divide(divisionPart) {
@@ -141,6 +160,11 @@ class RecursiveImage {
         }
 
         this.addRangePriority(rangePriority, left, right);
+    }
+
+    reset() {
+        let range = new Range2D(0, 0, this.imgData.width, this.imgData.height);
+        this.rangePrioritys = [new RangePriority(range, this.imgData, 1)];
     }
 
     drawAll() {
@@ -212,7 +236,7 @@ class RangePriority {
                 sfx += 4;
             }
         }
-        
+
         for (let i = 0; i < 3; i++) {
             this.variance[i] = this.variance[i] / this.range.area;
         }
