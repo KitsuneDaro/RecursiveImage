@@ -4,13 +4,14 @@ $(() => {
         $('#imgFileInput').get(0),
         $('#maxTimesInput').get(0),
         $('#divideInput').get(0),
+        $('#lineCheck').get(0),
         $('#saveButton').get(0),
         $('#resetButton').get(0)
     );
 });
 
 class Main {
-    constructor(mainCanvas, inputImg, inputTimes, inputDivide, buttonSave, buttonReset) {
+    constructor(mainCanvas, inputImg, inputTimes, inputDivide, checkLine, buttonSave, buttonReset) {
         this.mainCanvas = mainCanvas;
         this.mainCtx = this.mainCanvas.getContext('2d');
 
@@ -36,6 +37,9 @@ class Main {
 
         this.inputDivide.value = 2;
         this.inputDivide.min = 2;
+
+        this.checkLine = checkLine;
+        this.checkLine.checked = true;
 
         this.buttonSave = buttonSave;
 
@@ -85,14 +89,18 @@ class Main {
                 let i = 0;
 
                 while (i < this.inputTimes.value && (performance.now() - start) < (this.intervalTime / 2)) {
-                    if (!this.reimg.divide(this.inputDivide.value)) {
+                    if (!this.reimg.divide(this.inputDivide.value, this.checkLine.checked)) {
                         clearInterval(this.interval);
                     }
                     i += 1;
                 }
             }, this.intervalTime);
 
-            this.reimg.divide(this.inputDivide.value);
+            this.reimg.divide(this.inputDivide.value, this.checkLine.checked);
+
+            this.checkLine.addEventListener('change', (e) => {
+                this.reimg.drawAll(this.checkLine.checked);
+            });
 
             this.buttonReset.addEventListener('click', (e) => {
                 this.reimg.reset();
@@ -111,7 +119,7 @@ class RecursiveImage {
         this.reset();
     }
 
-    divide(divisionPart) {
+    divide(divisionPart, line) {
         if (this.rangePrioritys.length == 0) {
             return false;
         }
@@ -134,7 +142,7 @@ class RecursiveImage {
                 let partRange = new Range2D(sx, sy, ex, ey);
                 let partRangePriority = new RangePriority(partRange, this.imgData, rangePriority.divisionCount + 1);
 
-                this.draw(partRangePriority);
+                this.draw(partRangePriority, line);
 
                 if (range.width > 1 && range.height > 1) {
                     this.addRangePriority(partRangePriority, 0, this.rangePrioritys.length - 1);
@@ -167,26 +175,29 @@ class RecursiveImage {
         this.rangePrioritys = [new RangePriority(range, this.imgData, 1)];
     }
 
-    drawAll() {
+    drawAll(line) {
         this.rangePrioritys.forEach((rangePriority) => {
-            this.draw(rangePriority);
+            this.draw(rangePriority, line);
         });
     }
 
-    draw(rangePriority) {
+    draw(rangePriority, line) {
         let range = rangePriority.range;
         let fillStyle = 'rgba(';
 
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 2; i++) {
             fillStyle += rangePriority.average[i] + ',';
         }
 
-        this.ctx.fillStyle = fillStyle + '1)';
+        this.ctx.fillStyle = fillStyle + rangePriority.average[2] + ')';
         this.ctx.fillRect(range.sx, range.sy, range.width, range.height);
-        this.ctx.fillStyle = '#000000';
-        this.ctx.beginPath();
-        this.ctx.rect(range.sx, range.sy, range.width, range.height);
-        this.ctx.stroke();
+
+        if (line) {
+            this.ctx.fillStyle = '#000000';
+            this.ctx.beginPath();
+            this.ctx.rect(range.sx, range.sy, range.width, range.height);
+            this.ctx.stroke();
+        }
     }
 }
 
